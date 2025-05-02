@@ -1,6 +1,7 @@
+
 import { toast } from "sonner";
 
-// تغيير URL قاعدة الـ API للاتصال المباشر بواجهة Kinguin API
+// تعديل URL قاعدة الـ API للاتصال المباشر بواجهة Kinguin API
 const API_BASE_URL = "https://gateway.kinguin.net/esa/api";
 const API_KEY = "03403fcdbe5b2103ca5acc0964f996c4";
 
@@ -183,40 +184,37 @@ class ApiService {
   private headers: HeadersInit = {
     'X-Api-Key': API_KEY,
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    // إضافة هيدرز إضافية للتعامل مع CORS
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Api-Key, Authorization'
   };
-
-  // استخدام proxy حديث للتغلب على مشاكل CORS
-  private getProxiedUrl(url: string): string {
-    // يمكننا استخدام خدمة cors-anywhere أو allorigins أو غيرها
-    // هنا سنستخدم خدمة cors.sh التي تعتبر أكثر استقرارًا
-    return `https://cors.sh/${url}`;
-    // بديل آخر: return `https://corsproxy.io/?${encodeURIComponent(url)}`;
-  }
 
   private async fetchWithFallback<T>(endpoint: string, options: RequestInit = {}, mockData?: T): Promise<T> {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
-      const proxiedUrl = this.getProxiedUrl(url);
       
-      console.log("Fetching from URL:", proxiedUrl);
+      console.log("Fetching from URL:", url);
       
       // إضافة timeout لتحسين تجربة المستخدم
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 seconds timeout
       
-      const response = await fetch(proxiedUrl, {
+      const response = await fetch(url, {
         ...options,
-        headers: {
-          ...this.headers,
-          // إضافة headers لدعم CORS proxy
-          'x-cors-api-key': 'temp_me', // مفتاح مجاني مؤقت لـ cors.sh
-        },
-        signal: controller.signal
+        headers: this.headers,
+        signal: controller.signal,
+        // إضافة mode: 'cors' للتعامل مع طلبات CORS
+        mode: 'cors',
+        // إضافة credentials للتعامل مع الكوكيز
+        credentials: 'same-origin'
       });
       
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        console.error(`API error: ${response.status}`, response);
         throw new Error(`API error: ${response.status}`);
       }
 
@@ -445,18 +443,15 @@ class ApiService {
     }
   }
 
-  // وظيفة لوضع طلب - تصحيح طريقة الاتصال
+  // وظيفة لوضع طلب - اتصال مباشر
   async placeOrder(orderData: OrderInput): Promise<OrderDetail | null> {
     try {
       const endpoint = `/v1/order`;
-      const url = this.getProxiedUrl(`${API_BASE_URL}${endpoint}`);
+      const url = `${API_BASE_URL}${endpoint}`;
       
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          ...this.headers,
-          'x-cors-api-key': 'temp_me',
-        },
+        headers: this.headers,
         body: JSON.stringify(orderData)
       });
 
