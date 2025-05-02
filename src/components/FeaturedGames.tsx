@@ -1,64 +1,72 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import GameCard, { Game } from './GameCard';
-
-// Fake data for now, will be replaced with API data
-const demoGames: Game[] = [
-  {
-    id: 1,
-    name: "Cyberpunk 2077",
-    originalPrice: 59.99,
-    price: 69.99,
-    image: "https://images.unsplash.com/photo-1640079421264-61f50d5379ce?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80",
-    platform: "PC / Steam"
-  },
-  {
-    id: 2,
-    name: "FIFA 23",
-    originalPrice: 49.99,
-    price: 57.49,
-    image: "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80",
-    platform: "PC / Origin"
-  },
-  {
-    id: 3,
-    name: "Elden Ring",
-    originalPrice: 69.99,
-    price: 80.49,
-    image: "https://images.unsplash.com/photo-1614465000772-1b302f406c67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80",
-    platform: "PC / Steam"
-  },
-  {
-    id: 4,
-    name: "Call of Duty: Modern Warfare",
-    originalPrice: 59.99,
-    price: 68.99,
-    image: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1480&q=80",
-    platform: "PC / Battle.net"
-  }
-];
+import { apiService, KinguinProduct } from '../services/api';
+import { toast } from 'sonner';
 
 interface FeaturedGamesProps {
   title: string;
 }
 
 const FeaturedGames: React.FC<FeaturedGamesProps> = ({ title }) => {
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedGames = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getFeaturedProducts(4);
+        
+        if (response && response.data) {
+          // Transform API data into our Game interface format
+          const transformedGames = response.data.map((item: KinguinProduct) => ({
+            id: item.kinguinId,
+            name: item.name,
+            originalPrice: item.price || 0,
+            price: parseFloat(((item.price || 0) * 1.15).toFixed(2)),
+            image: item.images?.cover?.url || item.images?.screenshots?.[0]?.url || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+            platform: item.platform || "PC",
+          }));
+          
+          setGames(transformedGames);
+        }
+      } catch (error) {
+        console.error("Error fetching featured games:", error);
+        toast.error("فشل في جلب الألعاب المميزة");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedGames();
+  }, []);
+
   return (
     <section className="py-8">
       <div className="container">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">{title}</h2>
-          <a href="#" className="text-gaming-400 hover:text-gaming-500 transition-colors text-sm">
+          <a href="/products" className="text-gaming-400 hover:text-gaming-500 transition-colors text-sm">
             عرض الكل
           </a>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {demoGames.map((game) => (
-            <div key={game.id}>
-              <GameCard game={game} />
-            </div>
-          ))}
-        </div>
+        
+        {loading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((placeholder) => (
+              <div key={placeholder} className="bg-secondary animate-pulse h-[350px] rounded-lg"></div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {games.map((game) => (
+              <div key={game.id}>
+                <GameCard game={game} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
