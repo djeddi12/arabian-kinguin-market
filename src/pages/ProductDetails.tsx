@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -50,7 +49,7 @@ const ProductDetails = () => {
       "@context": "https://schema.org",
       "@type": "Product",
       "name": product.name,
-      "description": product.description,
+      "description": product.description || "",
       "image": product.images?.cover?.url || product.images?.screenshots?.[0]?.url,
       "brand": product.publishers?.[0] || "",
       "sku": product.kinguinId.toString(),

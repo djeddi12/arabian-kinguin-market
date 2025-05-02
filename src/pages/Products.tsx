@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Search, Filter } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import GameCard, { Game } from '@/components/GameCard';
-import { apiService, ProductQueryParams, KinguinProduct } from '@/services/api';
+import { apiService, KinguinProduct } from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
 
 const Products = () => {
@@ -51,7 +50,7 @@ const Products = () => {
     setLoading(true);
     
     // Build query params based on filters
-    const queryParams: ProductQueryParams = {
+    const queryParams: any = {
       page,
       limit: 20
     };
@@ -72,7 +71,7 @@ const Products = () => {
     
     if (response && response.data) {
       // Transform API data into our Game interface format
-      const transformedProducts = response.data.map((item: KinguinProduct) => ({
+      const transformedProducts = response.data.map((item: any) => ({
         id: item.kinguinId,
         name: item.name,
         originalPrice: item.price || 0,

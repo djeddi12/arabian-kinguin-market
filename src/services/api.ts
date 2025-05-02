@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 
 // The base URL for API calls - using a CORS proxy for development environment
@@ -25,14 +24,14 @@ export interface KinguinApiResponse<T> {
 
 export interface KinguinProduct {
   kinguinId: number;
-  productId: string;
+  productId?: string;
   name: string;
-  originalName: string;
-  description: string;
+  originalName?: string;
+  description?: string;
   developers?: string[];
   publishers?: string[];
   genres?: string[];
-  platform: string;
+  platform?: string;
   releaseDate?: string;
   qty?: number;
   price?: number;
@@ -141,9 +140,10 @@ export interface BalanceResponse {
 }
 
 // Mock data for development if API fails
-const mockProducts = [
+const mockProducts: KinguinProduct[] = [
   {
     kinguinId: 1001,
+    productId: "p1001",
     name: "Cyberpunk 2077",
     originalName: "Cyberpunk 2077",
     description: "Cyberpunk 2077 is an open-world, action-adventure RPG set in the megalopolis of Night City.",
@@ -151,6 +151,23 @@ const mockProducts = [
     releaseDate: "2020-12-10",
     price: 49.99,
     genres: ["RPG", "Action", "Open World"],
+    publishers: ["CD Projekt RED"],
+    developers: ["CD Projekt RED"],
+    metacriticScore: 86,
+    languages: ["English", "French", "German", "Spanish", "Russian", "Polish"],
+    systemRequirements: [
+      {
+        system: "Windows",
+        requirement: [
+          "OS: Windows 10",
+          "Processor: Intel Core i5-3570K or AMD FX-8310",
+          "Memory: 8 GB RAM",
+          "Graphics: NVIDIA GTX 780 or AMD Radeon RX 470",
+          "Storage: 70 GB available space"
+        ]
+      }
+    ],
+    activationDetails: "Activate the product on your Steam account",
     images: {
       cover: {
         url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f",
@@ -164,6 +181,7 @@ const mockProducts = [
   },
   {
     kinguinId: 1002,
+    productId: "p1002",
     name: "Red Dead Redemption 2",
     originalName: "Red Dead Redemption 2",
     description: "Red Dead Redemption 2 is an epic tale of life in America's unforgiving heartland.",
@@ -171,6 +189,23 @@ const mockProducts = [
     releaseDate: "2019-11-05",
     price: 44.99,
     genres: ["Action", "Adventure", "Open World"],
+    publishers: ["Rockstar Games"],
+    developers: ["Rockstar Games"],
+    metacriticScore: 93,
+    languages: ["English", "French", "German", "Spanish", "Italian", "Portuguese"],
+    systemRequirements: [
+      {
+        system: "Windows",
+        requirement: [
+          "OS: Windows 10",
+          "Processor: Intel Core i7-4770K / AMD Ryzen 5 1500X",
+          "Memory: 12 GB RAM",
+          "Graphics: Nvidia GeForce GTX 1060 6GB / AMD Radeon RX 480 4GB",
+          "Storage: 150 GB available space"
+        ]
+      }
+    ],
+    activationDetails: "Activate the product on your Epic Games account",
     images: {
       cover: {
         url: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f",
@@ -184,6 +219,7 @@ const mockProducts = [
   },
   {
     kinguinId: 1003,
+    productId: "p1003",
     name: "The Witcher 3: Wild Hunt",
     originalName: "The Witcher 3: Wild Hunt",
     description: "A story-driven, open world RPG set in a visually stunning fantasy universe.",
@@ -191,6 +227,23 @@ const mockProducts = [
     releaseDate: "2015-05-19",
     price: 29.99,
     genres: ["RPG", "Open World", "Adventure"],
+    publishers: ["CD Projekt RED"],
+    developers: ["CD Projekt RED"],
+    metacriticScore: 92,
+    languages: ["English", "French", "German", "Spanish", "Polish", "Russian"],
+    systemRequirements: [
+      {
+        system: "Windows",
+        requirement: [
+          "OS: 64-bit Windows 7, 64-bit Windows 8 (8.1) or 64-bit Windows 10",
+          "Processor: Intel CPU Core i5-2500K 3.3GHz / AMD CPU Phenom II X4 940",
+          "Memory: 6 GB RAM",
+          "Graphics: Nvidia GPU GeForce GTX 660 / AMD GPU Radeon HD 7870",
+          "Storage: 35 GB available space"
+        ]
+      }
+    ],
+    activationDetails: "Activate the product on your GOG account",
     images: {
       cover: {
         url: "https://images.unsplash.com/photo-1542751371-adc38448a05e",
@@ -204,6 +257,7 @@ const mockProducts = [
   },
   {
     kinguinId: 1004,
+    productId: "p1004",
     name: "FIFA 23",
     originalName: "FIFA 23",
     description: "Experience the world's game with FIFA 23.",
@@ -211,6 +265,23 @@ const mockProducts = [
     releaseDate: "2022-09-30",
     price: 59.99,
     genres: ["Sports", "Simulation"],
+    publishers: ["Electronic Arts"],
+    developers: ["EA Sports"],
+    metacriticScore: 78,
+    languages: ["English", "French", "German", "Spanish", "Portuguese", "Italian"],
+    systemRequirements: [
+      {
+        system: "Windows",
+        requirement: [
+          "OS: Windows 10 64-bit",
+          "Processor: Intel Core i5-6600K / AMD Ryzen 5 1600",
+          "Memory: 8 GB RAM",
+          "Graphics: NVIDIA GeForce GTX 1050 Ti / AMD Radeon RX 570",
+          "Storage: 100 GB available space"
+        ]
+      }
+    ],
+    activationDetails: "Activate the product on your Origin account",
     images: {
       cover: {
         url: "https://images.unsplash.com/photo-1560272564-c83b66b1ad12",
@@ -275,7 +346,7 @@ class ApiService {
       const url = `${API_BASE_URL}/v1/products?${queryParams.toString()}`;
       
       // Prepare mock response in case API fails
-      const mockResponse = {
+      const mockResponse: KinguinApiResponse<KinguinProduct> = {
         results: mockProducts.slice(0, params.limit || 4),
         item_count: mockProducts.length
       };
@@ -285,11 +356,11 @@ class ApiService {
       // Normalize the response based on the API structure
       if (data.results) {
         return { 
-          data: data.results, 
+          data: data.results || [], 
           meta: { 
             pagination: { 
               total: data.item_count || 0, 
-              count: data.results.length, 
+              count: (data.results || []).length, 
               per_page: parseInt(params.limit?.toString() || '20'), 
               current_page: parseInt(params.page?.toString() || '1'),
               total_pages: Math.ceil((data.item_count || 0) / (params.limit || 20))
