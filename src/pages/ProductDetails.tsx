@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,35 +14,36 @@ import { toast } from 'sonner';
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
   
-  // Use React Query to fetch product details with proper typing
-  const { data: product, isLoading } = useQuery({
+  // استخدام React Query لجلب تفاصيل المنتج مع الكتابة المناسبة
+  const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
       if (id) {
+        console.log("Fetching product with ID:", id);
         return await apiService.getProductById(id);
       }
       return null;
-    },
-    meta: {
-      onError: (error: Error) => {
-        console.error("Error fetching product:", error);
-        toast.error("فشل في جلب تفاصيل المنتج");
-      }
     }
   });
 
-  // Calculate 15% markup if product exists
+  // إذا حدث خطأ، عرضه في وحدة التحكم وإظهار رسالة للمستخدم
+  if (error) {
+    console.error("Error fetching product:", error);
+    toast.error("فشل في جلب تفاصيل المنتج");
+  }
+
+  // حساب هامش 15٪ إذا كان المنتج موجودًا
   const originalPrice = product?.price || 0;
   const markedUpPrice = parseFloat((originalPrice * 1.15).toFixed(2));
 
-  // Handle buy button click
+  // معالجة النقر على زر الشراء
   const handleBuyClick = () => {
     toast.info("سيتم تحويلك إلى موقع Kinguin لإتمام عملية الشراء");
-    // In a real implementation, this would redirect to Kinguin with the product
+    // في التنفيذ الحقيقي، سيؤدي هذا إلى إعادة التوجيه إلى Kinguin مع المنتج
     window.open(`https://www.kinguin.net/en/category/43867/undefined?r=${id}`, '_blank');
   };
 
-  // Generate schema markup for SEO
+  // إنشاء علامة مخطط لتحسين محركات البحث
   const getProductSchemaMarkup = () => {
     if (!product) return '';
     
@@ -125,7 +127,7 @@ const ProductDetails = () => {
       <Navbar />
       <main className="flex-1">
         <div className="container px-4 py-8">
-          {/* Add Schema.org markup for SEO */}
+          {/* إضافة علامة Schema.org لتحسين محركات البحث */}
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: getProductSchemaMarkup() }} />
           
           <div className="mb-4">
@@ -195,7 +197,7 @@ const ProductDetails = () => {
               <div className="bg-secondary p-6 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm text-muted-foreground line-through">${originalPrice}</span>
+                    <span className="text-sm text-muted-foreground line-through">${originalPrice.toFixed(2)}</span>
                     <div className="text-3xl font-bold text-gaming-400">${markedUpPrice}</div>
                   </div>
                   <Button className="gap-2" onClick={handleBuyClick}>

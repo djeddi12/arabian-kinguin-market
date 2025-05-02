@@ -9,9 +9,17 @@ interface FeaturedGamesProps {
   title: string;
   limit?: number;
   category?: string;
+  genreName?: string; 
+  platformName?: string;
 }
 
-const FeaturedGames: React.FC<FeaturedGamesProps> = ({ title, limit = 4, category }) => {
+const FeaturedGames: React.FC<FeaturedGamesProps> = ({ 
+  title, 
+  limit = 4, 
+  category,
+  genreName,
+  platformName
+}) => {
   const transformData = (data: KinguinProduct[]): Game[] => {
     return data.map((item: KinguinProduct) => ({
       id: item.kinguinId,
@@ -25,24 +33,30 @@ const FeaturedGames: React.FC<FeaturedGamesProps> = ({ title, limit = 4, categor
     }));
   };
 
-  // Fetch featured games with ReactQuery
+  // جلب الألعاب المميزة باستخدام ReactQuery
   const { data, isLoading, error } = useQuery({
-    queryKey: ['featuredGames', category, limit],
+    queryKey: ['featuredGames', category, genreName, platformName, limit],
     queryFn: async () => {
       let response;
-      if (category === 'genre') {
-        response = await apiService.getProductsByGenre(category || 'Action', 1, limit);
-      } else if (category === 'platform') {
-        response = await apiService.getProductsByPlatform(category || 'Steam', 1, limit);
+      console.log("FeaturedGames queryFn executing with:", category, genreName, platformName);
+      
+      if (category === 'genre' && genreName) {
+        console.log("Getting products by genre:", genreName);
+        response = await apiService.getProductsByGenre(genreName, 1, limit);
+      } else if (category === 'platform' && platformName) {
+        console.log("Getting products by platform:", platformName);
+        response = await apiService.getProductsByPlatform(platformName, 1, limit);
       } else {
+        console.log("Getting featured products");
         response = await apiService.getFeaturedProducts(limit);
       }
       
+      console.log("Response data:", response.data);
       return transformData(response.data || []);
     },
   });
 
-  // Show error in console but don't display to user
+  // عرض الخطأ في وحدة التحكم ولكن عدم العرض للمستخدم
   if (error) {
     console.error("Error fetching featured games:", error);
   }
@@ -69,11 +83,17 @@ const FeaturedGames: React.FC<FeaturedGamesProps> = ({ title, limit = 4, categor
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {data && data.map((game) => (
-              <div key={game.id}>
-                <GameCard game={game} />
+            {data && data.length > 0 ? (
+              data.map((game) => (
+                <div key={game.id}>
+                  <GameCard game={game} />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-4 text-center py-8">
+                <p className="text-gray-500">لم يتم العثور على ألعاب في هذه الفئة</p>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

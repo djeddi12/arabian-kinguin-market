@@ -1,10 +1,7 @@
 import { toast } from "sonner";
 
-// The base URL for API calls - using a CORS proxy for development environment
-const API_BASE_URL = "https://corsproxy.io/?https://gateway.kinguin.net/esa/api";
-// For production, you would use direct endpoint with proper CORS headers
-// const API_BASE_URL = "https://gateway.kinguin.net/esa/api";
-
+// تغيير URL قاعدة الـ API لاستخدام CORS proxy أفضل
+const API_BASE_URL = "https://api.allorigins.win/raw?url=https://gateway.kinguin.net/esa/api";
 const API_KEY = "c6520b20c5ed50387b610ee53251c52f";
 
 export interface KinguinApiResponse<T> {
@@ -139,7 +136,7 @@ export interface BalanceResponse {
   balance: number;
 }
 
-// Mock data for development if API fails
+// بيانات وهمية للاستخدام فقط عند فشل API
 const mockProducts: KinguinProduct[] = [
   {
     kinguinId: 1001,
@@ -303,22 +300,34 @@ class ApiService {
 
   private async fetchWithFallback<T>(url: string, options: RequestInit = {}, mockData?: T): Promise<T> {
     try {
+      console.log("Fetching from URL:", url);
+      
+      // إضافة timeout لتحسين تجربة المستخدم
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+      
       const response = await fetch(url, {
         ...options,
         headers: this.headers,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
 
-      return await response.json() as T;
+      const data = await response.json() as T;
+      console.log("API response:", data);
+      return data;
     } catch (error) {
       console.error(`Error fetching from ${url}:`, error);
       
-      // If mock data is provided, use it as fallback
+      // إذا كان هناك بيانات وهمية، استخدمها كخطة بديلة وأظهر إشعار
       if (mockData) {
         console.log("Using mock data as fallback");
+        toast.error("تعذر الاتصال بخدمة API، يتم استخدام بيانات بديلة مؤقتاً");
         return mockData;
       }
       
@@ -326,26 +335,31 @@ class ApiService {
     }
   }
 
-  // Function to fetch products with pagination and filtering
+  // وظيفة لجلب المنتجات مع الصفحات والتصفية
   async getProducts(params: ProductQueryParams = {}) {
     try {
-      // Build query string from params
+      // تكوين سلسلة الاستعلام من المعلمات
       const queryParams = new URLSearchParams();
       
-      // Add all params that are defined
+      // إضافة جميع المعلمات المحددة
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           queryParams.append(key, value.toString());
         }
       });
       
-      // Default page and limit if not provided
+      // الصفحة الافتراضية والحد إذا لم يتم توفيرها
       if (!params.page) queryParams.append('page', '1');
       if (!params.limit) queryParams.append('limit', '20');
-
-      const url = `${API_BASE_URL}/v1/products?${queryParams.toString()}`;
       
-      // Prepare mock response in case API fails
+      // استخدام URL مشفر لتجنب مشاكل الأحرف الخاصة
+      const encodedApiUrl = encodeURIComponent(`https://gateway.kinguin.net/esa/api/v1/products?${queryParams.toString()}`);
+      const url = `https://api.allorigins.win/raw?url=${encodedApiUrl}`;
+      
+      console.log("Fetching products with URL:", url);
+      console.log("Original query params:", queryParams.toString());
+      
+      // تحضير استجابة وهمية في حالة فشل API
       const mockResponse: KinguinApiResponse<KinguinProduct> = {
         results: mockProducts.slice(0, params.limit || 4),
         item_count: mockProducts.length
@@ -353,7 +367,9 @@ class ApiService {
 
       const data = await this.fetchWithFallback<KinguinApiResponse<KinguinProduct>>(url, {}, mockResponse);
       
-      // Normalize the response based on the API structure
+      console.log("API response for products:", data);
+      
+      // توحيد الاستجابة بناءً على بنية API
       if (data.results) {
         return { 
           data: data.results || [], 
@@ -385,7 +401,7 @@ class ApiService {
       console.error("Error fetching products:", error);
       toast.error("فشل في جلب المنتجات، يرجى المحاولة مرة أخرى");
       
-      // Return mock data on failure
+      // إرجاع بيانات وهمية عند الفشل
       return { 
         data: mockProducts.slice(0, params.limit || 4), 
         meta: { 
@@ -401,25 +417,31 @@ class ApiService {
     }
   }
 
-  // Function to fetch a single product by ID
+  // وظيفة لجلب منتج واحد حسب المعرف
   async getProductById(id: string) {
     try {
-      const url = `${API_BASE_URL}/v1/products/${id}`;
+      // استخدام URL مشفر لتجنب مشاكل الأحرف الخاصة
+      const encodedApiUrl = encodeURIComponent(`https://gateway.kinguin.net/esa/api/v1/products/${id}`);
+      const url = `https://api.allorigins.win/raw?url=${encodedApiUrl}`;
       
-      // Find a mock product to use as fallback
+      console.log("Fetching product details with URL:", url);
+      
+      // البحث عن منتج وهمي لاستخدامه كبديل
       const mockProduct = mockProducts.find(product => product.kinguinId.toString() === id) || mockProducts[0];
       
-      return await this.fetchWithFallback<KinguinProduct>(url, {}, mockProduct);
+      const product = await this.fetchWithFallback<KinguinProduct>(url, {}, mockProduct);
+      console.log("Product details response:", product);
+      return product;
     } catch (error) {
       console.error(`Error fetching product ${id}:`, error);
       toast.error("فشل في جلب تفاصيل المنتج، يرجى المحاولة مرة أخرى");
       
-      // Return mock data for the specific ID or the first mock product
+      // إرجاع بيانات وهمية للمعرف المحدد أو أول منتج وهمي
       return mockProducts.find(product => product.kinguinId.toString() === id) || mockProducts[0];
     }
   }
 
-  // Function to search products
+  // وظيفة للبحث عن المنتجات
   async searchProducts(query: string, page = 1, limit = 20) {
     return this.getProducts({
       name: query,
@@ -428,7 +450,7 @@ class ApiService {
     });
   }
 
-  // Function to get products by genre
+  // وظيفة لجلب المنتجات حسب الفئة
   async getProductsByGenre(genre: string, page = 1, limit = 20) {
     return this.getProducts({
       genre,
@@ -437,7 +459,7 @@ class ApiService {
     });
   }
 
-  // Function to get products by platform
+  // وظيفة لجلب المنتجات حسب платформة
   async getProductsByPlatform(platform: string, page = 1, limit = 20) {
     return this.getProducts({
       platform,
@@ -446,19 +468,22 @@ class ApiService {
     });
   }
 
-  // Function to get featured/highlighted products
+  // وظيفة للحصول على المنتجات المميزة/المسلط عليها الضوء
   async getFeaturedProducts(limit = 4) {
-    // For featured products, we can sort by popularity or just get the latest
-    return this.getProducts({
+    // بالنسبة للمنتجات المميزة، يمكننا الترتيب حسب الشعبية أو الحصول على أحدث المنتجات
+    console.log("Getting featured products");
+    const response = await this.getProducts({
       sortBy: 'updatedAt',
       sortType: 'desc',
       limit
     });
+    console.log("Featured products response:", response);
+    return response;
   }
 
-  // Get all available platforms
+  // وظيفة لجلب جميع الأنظمة الأساسية
   async getPlatforms() {
-    // This is a list of common gaming platforms on Kinguin
+    // هذا هو قائمة من الأنظمة الأساسية الشائعة على Kinguin
     return [
       "Steam",
       "Origin",
@@ -472,9 +497,9 @@ class ApiService {
     ];
   }
 
-  // Get all available genres from Kinguin API docs
+  // وظيفة لجلب جميع الأنواع الفنية من Kinguin API Docs
   async getGenres() {
-    // This is the list of genres from the API documentation
+    // هذا هو القائمة من الأنواع الفنية من الوثائق
     return [
       "Action",
       "Adventure",
@@ -511,7 +536,7 @@ class ApiService {
     ];
   }
 
-  // Get account balance
+  // وظيفة لجلب رصيد الحساب
   async getBalance(): Promise<BalanceResponse> {
     try {
       const url = `${API_BASE_URL}/v1/balance`;
@@ -523,7 +548,7 @@ class ApiService {
     }
   }
 
-  // Place an order
+  // وظيفة لوضع طلب
   async placeOrder(orderData: OrderInput): Promise<OrderDetail | null> {
     try {
       const url = `${API_BASE_URL}/v1/order`;
@@ -548,7 +573,7 @@ class ApiService {
     }
   }
 
-  // Get order details by ID
+  // وظيفة لجلب تفاصيل طلب حسب المعرف
   async getOrderById(orderId: string): Promise<OrderDetail | null> {
     try {
       const url = `${API_BASE_URL}/v1/order/${orderId}`;
@@ -560,14 +585,14 @@ class ApiService {
     }
   }
 
-  // Get list of orders with filters
+  // وظيفة لجلب قائمة الطلبات مع التصفية
   async getOrders(page = 1, limit = 20, filters: Record<string, any> = {}): Promise<{results: OrderDetail[], item_count: number}> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('page', page.toString());
       queryParams.append('limit', limit.toString());
       
-      // Add additional filters
+      // إضافة additional filters
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           queryParams.append(key, value.toString());
