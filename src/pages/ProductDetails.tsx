@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
   
-  // Use React Query to fetch product details
+  // Use React Query to fetch product details with proper typing
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
@@ -23,9 +23,11 @@ const ProductDetails = () => {
       }
       return null;
     },
-    onError: (error) => {
-      console.error("Error fetching product:", error);
-      toast.error("فشل في جلب تفاصيل المنتج");
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error fetching product:", error);
+        toast.error("فشل في جلب تفاصيل المنتج");
+      }
     }
   });
 

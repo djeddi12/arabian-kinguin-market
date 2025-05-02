@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import GameCard, { Game } from './GameCard';
 import { apiService, KinguinProduct } from '../services/api';
