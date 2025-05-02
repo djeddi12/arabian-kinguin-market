@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				gaming: {
+					'100': '#f3e8ff',
+					'200': '#e9d5ff',
+					'300': '#d8b4fe',
+					'400': '#c084fc',
+					'500': '#a855f7',
+					'600': '#9333ea',
+					'700': '#7e22ce',
+					'800': '#6b21a8',
+					'900': '#581c87',
 				}
 			},
 			borderRadius: {
@@ -84,11 +96,25 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'glow': {
+					'0%, 100%': { 
+						opacity: '1',
+						'box-shadow': '0 0 20px rgba(168, 85, 247, 0.5)'
+					},
+					'50%': {
+						opacity: '0.7',
+						'box-shadow': '0 0 30px rgba(168, 85, 247, 0.8)'
+					},
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'glow': 'glow 3s ease-in-out infinite'
+			},
+			fontFamily: {
+				'tajawal': ['Tajawal', 'sans-serif'],
 			}
 		}
 	},
